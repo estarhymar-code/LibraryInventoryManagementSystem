@@ -8,79 +8,85 @@ import java.util.List;
 
 public class BookDAO {
 
+    public int[] getLibraryStatistics() {
+        int[] stats = new int[4]; // Order: [TotalBooks, TotalBorrowed, TotalOverdue, TotalStudents]
+        String q1 = "SELECT IFNULL(SUM(quantity), 0) FROM books";
+        String q2 = "SELECT COUNT(*) FROM transactions WHERE status = 'BORROWED'";
+        String q3 = "SELECT COUNT(*) FROM transactions WHERE status = 'OVERDUE'";
+        String q4 = "SELECT COUNT(*) FROM users WHERE role = 'STUDENT'";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
+            
+            try (ResultSet rs = stmt.executeQuery(q1)) { if (rs.next()) stats[0] = rs.getInt(1); }
+            try (ResultSet rs = stmt.executeQuery(q2)) { if (rs.next()) stats[1] = rs.getInt(1); }
+            try (ResultSet rs = stmt.executeQuery(q3)) { if (rs.next()) stats[2] = rs.getInt(1); }
+            try (ResultSet rs = stmt.executeQuery(q4)) { if (rs.next()) stats[3] = rs.getInt(1); }
+            
+        } catch (SQLException e) { e.printStackTrace(); }
+        return stats;
+    }
+
     public List<Book> getAllBooks() {
         List<Book> list = new ArrayList<>();
-        String query = "SELECT b.*, c.category_name FROM books b " +
-                       "LEFT JOIN categories c ON b.category_id = c.category_id";
+        String sql = "SELECT b.*, c.category_name FROM books b LEFT JOIN categories c ON b.category_id = c.category_id";
         try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-            
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                Book book = new Book();
-                book.setBookId(rs.getInt("book_id"));
-                book.setIsbn(rs.getString("isbn"));
-                book.setTitle(rs.getString("title"));
-                book.setAuthor(rs.getString("author"));
-                book.setPublisher(rs.getString("publisher"));
-                book.setPublicationYear(rs.getInt("publication_year"));
-                book.setCategoryId(rs.getInt("category_id"));
-                book.setCategoryName(rs.getString("category_name"));
-                book.setQuantity(rs.getInt("quantity"));
-                list.add(book);
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setIsbn(rs.getString("isbn"));
+                b.setTitle(rs.getString("title"));
+                b.setAuthor(rs.getString("author"));
+                b.setPublisher(rs.getString("publisher"));
+                b.setPublicationYear(rs.getInt("publication_year"));
+                b.setCategoryId(rs.getInt("category_id"));
+                b.setCategoryName(rs.getString("category_name") != null ? rs.getString("category_name") : "General");
+                b.setQuantity(rs.getInt("quantity"));
+                list.add(b);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
 
-    public boolean addBook(Book book) {
-        String query = "INSERT INTO books (isbn, title, author, publisher, publication_year, category_id, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    public boolean addBook(Book b) {
+        String sql = "INSERT INTO books (isbn, title, author, publisher, publication_year, category_id, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, book.getIsbn());
-            stmt.setString(2, book.getTitle());
-            stmt.setString(3, book.getAuthor());
-            stmt.setString(4, book.getPublisher());
-            stmt.setInt(5, book.getPublicationYear());
-            stmt.setInt(6, book.getCategoryId());
-            stmt.setInt(7, book.getQuantity());
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, b.getIsbn());
+            stmt.setString(2, b.getTitle());
+            stmt.setString(3, b.getAuthor());
+            stmt.setString(4, b.getPublisher());
+            stmt.setInt(5, b.getPublicationYear());
+            stmt.setInt(6, b.getCategoryId());
+            stmt.setInt(7, b.getQuantity());
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
-    public boolean updateBook(Book book) {
-        String query = "UPDATE books SET isbn=?, title=?, author=?, publisher=?, publication_year=?, category_id=?, quantity=? WHERE book_id=?";
+    public boolean updateBook(Book b) {
+        String sql = "UPDATE books SET isbn=?, title=?, author=?, publisher=?, publication_year=?, category_id=?, quantity=? WHERE book_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, book.getIsbn());
-            stmt.setString(2, book.getTitle());
-            stmt.setString(3, book.getAuthor());
-            stmt.setString(4, book.getPublisher());
-            stmt.setInt(5, book.getPublicationYear());
-            stmt.setInt(6, book.getCategoryId());
-            stmt.setInt(7, book.getQuantity());
-            stmt.setInt(8, book.getBookId());
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, b.getIsbn());
+            stmt.setString(2, b.getTitle());
+            stmt.setString(3, b.getAuthor());
+            stmt.setString(4, b.getPublisher());
+            stmt.setInt(5, b.getPublicationYear());
+            stmt.setInt(6, b.getCategoryId());
+            stmt.setInt(7, b.getQuantity());
+            stmt.setInt(8, b.getBookId());
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
-    public boolean deleteBook(int bookId) {
-        String query = "DELETE FROM books WHERE book_id=?";
+    public boolean deleteBook(int id) {
+        String sql = "DELETE FROM books WHERE book_id=?";
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setInt(1, bookId);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 }

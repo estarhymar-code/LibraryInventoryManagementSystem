@@ -9,7 +9,7 @@ import java.util.List;
 public class UserDAO {
     
     public boolean registerUser(User user) {
-        String query = "INSERT INTO users (username, password, full_name, course, year_level, contact_number, email, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO users (username, password, full_name, course, year_level, contact_number, email, role, date_registered) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE())";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             
@@ -48,7 +48,8 @@ public class UserDAO {
                         rs.getString("year_level"),
                         rs.getString("contact_number"),
                         rs.getString("email"),
-                        rs.getString("role")
+                        rs.getString("role"),
+                        rs.getString("date_registered")
                     );
                 }
             }
@@ -75,7 +76,8 @@ public class UserDAO {
                     rs.getString("year_level"),
                     rs.getString("contact_number"),
                     rs.getString("email"),
-                    rs.getString("role")
+                    rs.getString("role"),
+                    rs.getString("date_registered")
                 ));
             }
         } catch (SQLException e) {

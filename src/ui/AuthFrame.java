@@ -39,13 +39,13 @@ public class AuthFrame extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         JLabel lblTitle = new JLabel("Welcome Back", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        lblTitle.setForeground(new Color(44, 62, 80));
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
+        lblTitle.setForeground(Color.DARK_GRAY);
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         p.add(lblTitle, gbc);
 
         gbc.gridwidth = 1;
-        gbc.gridy = 1; p.add(new JLabel("Username:"), gbc);
+        gbc.gridy = 1; gbc.gridx = 0; p.add(new JLabel("Username:"), gbc);
         txtUser = new JTextField(15);
         gbc.gridx = 1; p.add(txtUser, gbc);
 
@@ -54,15 +54,14 @@ public class AuthFrame extends JFrame {
         gbc.gridx = 1; p.add(txtPass, gbc);
 
         btnLogin = new JButton("Sign In");
-        styleButton(btnLogin, Color.WHITE);
-        btnLogin.setForeground(Color.BLACK);
+        styleButton(btnLogin);
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
         p.add(btnLogin, gbc);
 
         JButton btnSwitch = new JButton("Create an account");
         btnSwitch.setBorderPainted(false);
         btnSwitch.setContentAreaFilled(false);
-        btnSwitch.setForeground(new Color(127, 140, 141));
+        btnSwitch.setForeground(Color.DARK_GRAY);
         gbc.gridy = 4;
         p.add(btnSwitch, gbc);
 
@@ -88,8 +87,8 @@ public class AuthFrame extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         JLabel lblTitle = new JLabel("Register Account", SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblTitle.setForeground(new Color(44, 62, 80));
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 22));
+        lblTitle.setForeground(Color.DARK_GRAY);
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         p.add(lblTitle, gbc);
 
@@ -128,15 +127,14 @@ public class AuthFrame extends JFrame {
         gbc.gridx = 1; p.add(cbRole, gbc);
 
         btnRegister = new JButton("Register Now");
-        styleButton(btnRegister, Color.WHITE);
-        btnRegister.setForeground(Color.BLACK);
+        styleButton(btnRegister);
         gbc.gridx = 0; gbc.gridy = 9; gbc.gridwidth = 2;
         p.add(btnRegister, gbc);
 
         JButton btnSwitch = new JButton("Back to login");
         btnSwitch.setBorderPainted(false);
         btnSwitch.setContentAreaFilled(false);
-        btnSwitch.setForeground(Color.WHITE);
+        btnSwitch.setForeground(Color.DARK_GRAY);
         gbc.gridy = 10;
         p.add(btnSwitch, gbc);
 
@@ -146,17 +144,9 @@ public class AuthFrame extends JFrame {
                 return;
             }
 
-            User u = new User(
-                0, 
-                txtRegUser.getText(), 
-                new String(txtRegPass.getPassword()), 
-                txtFullName.getText(),
-                txtCourse.getText(),
-                cbYearLevel.getSelectedItem().toString(),
-                txtContact.getText(),
-                txtEmail.getText(),
-                cbRole.getSelectedItem().toString()
-            );
+            User u = new User(0, txtRegUser.getText(), new String(txtRegPass.getPassword()), txtFullName.getText(),
+                              txtCourse.getText(), cbYearLevel.getSelectedItem().toString(), txtContact.getText(), 
+                              txtEmail.getText(), cbRole.getSelectedItem().toString(), "");
             
             if (userDAO.registerUser(u)) {
                 JOptionPane.showMessageDialog(this, "Registration Successful!");
@@ -170,11 +160,14 @@ public class AuthFrame extends JFrame {
         return p;
     }
 
-    private void styleButton(JButton btn, Color bg) {
-        btn.setBackground(bg);
-        btn.setForeground(Color.WHITE);
+    private void styleButton(JButton btn) {
+        btn.setBackground(Color.WHITE);
+        btn.setForeground(Color.BLACK);
         btn.setFocusPainted(false);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        btn.setFont(new Font("Arial", Font.BOLD, 12));
+        btn.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1),
+            BorderFactory.createEmptyBorder(8, 15, 8, 15)
+        ));
     }
 }

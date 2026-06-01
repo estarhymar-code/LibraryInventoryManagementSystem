@@ -24,77 +24,118 @@ public class DashboardFrame extends JFrame {
     private TransactionDAO txDAO = new TransactionDAO();
     private UserDAO userDAO = new UserDAO();
 
+    private JLabel lblStatTotalBooks, lblStatBorrowed, lblStatOverdue, lblStatStudents;
+
     private JTextField txtIsbn, txtTitle, txtAuthor, txtPublisher, txtPubYear, txtQty, txtCatId, txtSearch;
-    private int selectedBookId = -1; 
+    private int selectedBookId = -1;
     
     private JTextField txtUName, txtUPass, txtUFullName, txtUCourse, txtUContact, txtUEmail;
+    private JLabel lblRegDateValue; 
     private JComboBox<String> cbUYear, cbURole;
     private int selectedUserId = -1; 
 
     public DashboardFrame(User user) {
         this.currentUser = user;
-        setTitle("LMS Dashboard - " + currentUser.getFullName() + " (" + currentUser.getRole() + ")");
+        setTitle("Library Database Management System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1150, 750);
+        setSize(1250, 820);
         setLocationRelativeTo(null);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane.setDividerLocation(220);
+        splitPane.setDividerLocation(200);
         splitPane.setEnabled(false);
 
         JPanel sidebar = new JPanel(new BorderLayout());
-        sidebar.setBackground(new Color(44, 62, 80));
+        sidebar.setBackground(Color.DARK_GRAY);
         sidebar.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         JPanel topSidebar = new JPanel(new GridLayout(2, 1, 5, 5));
         topSidebar.setOpaque(false);
         JLabel lblUser = new JLabel(currentUser.getFullName(), SwingConstants.CENTER);
         lblUser.setForeground(Color.WHITE);
-        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblUser.setFont(new Font("Arial", Font.BOLD, 14));
         JLabel lblRole = new JLabel("(" + currentUser.getRole() + ")", SwingConstants.CENTER);
-        lblRole.setForeground(new Color(189, 195, 199));
-        lblRole.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        lblRole.setForeground(Color.LIGHT_GRAY);
         topSidebar.add(lblUser);
         topSidebar.add(lblRole);
         sidebar.add(topSidebar, BorderLayout.NORTH);
 
         JButton btnLogout = new JButton("Log Out");
-        btnLogout.setBackground(Color.WHITE);
-        btnLogout.setForeground(Color.BLACK);
-        btnLogout.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnLogout.setFocusPainted(false);
-        btnLogout.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        formatButton(btnLogout);
         sidebar.add(btnLogout, BorderLayout.SOUTH);
 
         btnLogout.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to log out?", "Logout Confirmation", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                this.dispose();
-                new AuthFrame();
-            }
+            this.dispose();
+            new AuthFrame();
         });
 
         splitPane.setLeftComponent(sidebar);
 
+        JPanel contentContainer = new JPanel(new BorderLayout(10, 10));
+        contentContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        if ("ADMIN".equals(currentUser.getRole())) {
+            contentContainer.add(buildAnalyticsDashboardPanel(), BorderLayout.NORTH);
+        }
+
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Catalog Explorer", buildBooksTab());
+        tabbedPane.addTab("Books Available", buildBooksTab());
         
-        String txTabTitle = "ADMIN".equals(currentUser.getRole()) ? "Circulation Desk (All Loans)" : "My Rented Books";
+        String txTabTitle = "ADMIN".equals(currentUser.getRole()) ? "Circulation Desk" : "My Borrowed Books";
         tabbedPane.addTab(txTabTitle, buildTransactionsTab());
         
         if ("ADMIN".equals(currentUser.getRole())) {
             tabbedPane.addTab("User Management", buildUsersTab());
         }
         
-        splitPane.setRightComponent(tabbedPane);
-
+        contentContainer.add(tabbedPane, BorderLayout.CENTER);
+        splitPane.setRightComponent(contentContainer);
         add(splitPane);
-        refreshBookData();
-        refreshTxData();
-        if ("ADMIN".equals(currentUser.getRole())) {
-            refreshUserData();
-        }
+
+        refreshAllWorkspaceData();
         setVisible(true);
+    }
+
+    private void formatButton(JButton button) {
+        button.setBackground(Color.WHITE);
+        button.setForeground(Color.BLACK);
+        button.setFocusPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+    }
+
+    private JPanel buildAnalyticsDashboardPanel() {
+        JPanel container = new JPanel(new GridLayout(1, 4, 15, 0));
+        container.setBorder(BorderFactory.createTitledBorder("System Overview Metrics"));
+        
+        lblStatTotalBooks = createMetricCard(container, "Total Volume Assets");
+        lblStatBorrowed = createMetricCard(container, "Active Borrow Checked-Out");
+        lblStatOverdue = createMetricCard(container, "Unreturned / Overdue Accounts");
+        lblStatStudents = createMetricCard(container, "Registered Student Accounts");
+        
+        return container;
+    }
+
+    private JLabel createMetricCard(JPanel parent, String title) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1),
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
+        
+        JLabel lblTitle = new JLabel(title, SwingConstants.LEFT);
+        lblTitle.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblTitle.setForeground(Color.GRAY);
+        
+        JLabel lblValue = new JLabel("0", SwingConstants.RIGHT);
+        lblValue.setFont(new Font("Arial", Font.BOLD, 22));
+        lblValue.setForeground(Color.BLACK);
+        
+        card.add(lblTitle, BorderLayout.NORTH);
+        card.add(lblValue, BorderLayout.CENTER);
+        parent.add(card);
+        
+        return lblValue;
     }
 
     private JPanel buildBooksTab() {
@@ -115,14 +156,12 @@ public class DashboardFrame extends JFrame {
         
         bookSorter = new TableRowSorter<>(bookModel);
         tableBooks.setRowSorter(bookSorter);
-        
         main.add(new JScrollPane(tableBooks), BorderLayout.CENTER);
 
         txtSearch.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { filterCatalog(); }
             @Override public void removeUpdate(DocumentEvent e) { filterCatalog(); }
             @Override public void changedUpdate(DocumentEvent e) { filterCatalog(); }
-            
             private void filterCatalog() {
                 String searchString = txtSearch.getText();
                 if (searchString.trim().length() == 0) {
@@ -146,21 +185,14 @@ public class DashboardFrame extends JFrame {
             form.add(new JLabel("Stock Quantity:")); txtQty = new JTextField(); form.add(txtQty);
 
             JPanel actionButtonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
-            JButton btnAdd = new JButton("Save New Asset");
-            JButton btnEdit = new JButton("Update Asset Details");
-            JButton btnDelete = new JButton("Remove Asset");
+            JButton btnAdd = new JButton("Save New");
+            JButton btnEdit = new JButton("Update");
+            JButton btnDelete = new JButton("Delete");
             
-            btnAdd.setBackground(Color.WHITE); btnAdd.setForeground(Color.BLACK);
-            btnEdit.setBackground(Color.WHITE); btnEdit.setForeground(Color.BLACK);
-            btnDelete.setBackground(Color.WHITE); btnDelete.setForeground(Color.BLACK);
+            formatButton(btnAdd); formatButton(btnEdit); formatButton(btnDelete);
             
-            actionButtonPanel.add(btnAdd);
-            actionButtonPanel.add(btnEdit);
-            actionButtonPanel.add(btnDelete);
-            
-            form.add(new JLabel("Control Operations:"));
-            form.add(actionButtonPanel);
-            
+            actionButtonPanel.add(btnAdd); actionButtonPanel.add(btnEdit); actionButtonPanel.add(btnDelete);
+            form.add(new JLabel("Operations:")); form.add(actionButtonPanel);
             main.add(form, BorderLayout.SOUTH);
 
             tableBooks.getSelectionModel().addListSelectionListener(e -> {
@@ -173,85 +205,49 @@ public class DashboardFrame extends JFrame {
                     txtAuthor.setText(bookModel.getValueAt(modelRow, 3).toString());
                     txtPublisher.setText(bookModel.getValueAt(modelRow, 4).toString());
                     txtPubYear.setText(bookModel.getValueAt(modelRow, 5).toString());
-                    txtCatId.setText(bookModel.getValueAt(modelRow, 6).toString().equals("Fiction") ? "1" : 
-                                    bookModel.getValueAt(modelRow, 6).toString().equals("Non-Fiction") ? "2" : 
-                                    bookModel.getValueAt(modelRow, 6).toString().equals("Science") ? "3" : "4"); 
+                    txtCatId.setText("1"); 
                     txtQty.setText(bookModel.getValueAt(modelRow, 7).toString());
                 }
             });
 
             btnAdd.addActionListener(e -> {
-                if(txtIsbn.getText().isEmpty() || txtTitle.getText().isEmpty() || txtPubYear.getText().isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "ISBN, Title, and Publication Year are required.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
                 try {
                     Book b = new Book();
-                    b.setIsbn(txtIsbn.getText());
-                    b.setTitle(txtTitle.getText());
-                    b.setAuthor(txtAuthor.getText());
-                    b.setPublisher(txtPublisher.getText());
-                    b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
-                    b.setCategoryId(Integer.parseInt(txtCatId.getText().trim()));
-                    b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
-                    
+                    b.setIsbn(txtIsbn.getText()); b.setTitle(txtTitle.getText()); b.setAuthor(txtAuthor.getText());
+                    b.setPublisher(txtPublisher.getText()); b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
+                    b.setCategoryId(Integer.parseInt(txtCatId.getText().trim())); b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
                     if (bookDAO.addBook(b)) {
-                        JOptionPane.showMessageDialog(this, "Asset added safely.");
-                        refreshBookData();
-                        clearBookFields();
+                        JOptionPane.showMessageDialog(this, "Book asset mapped successfully.");
+                        refreshAllWorkspaceData(); clearBookFields();
                     }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Publication Year, Category ID, and Quantity must be valid integers.", "Type Format Mismatch", JOptionPane.ERROR_MESSAGE);
-                }
+                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Production Error: Check numeric formatting lines for year/quantity levels!"); }
             });
 
             btnEdit.addActionListener(e -> {
-                if (selectedBookId == -1) {
-                    JOptionPane.showMessageDialog(this, "Please select a book from the table list above to edit.", "Selection Required", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
+                if (selectedBookId == -1) return;
                 try {
-                    Book b = new Book();
-                    b.setBookId(selectedBookId);
-                    b.setIsbn(txtIsbn.getText());
-                    b.setTitle(txtTitle.getText());
-                    b.setAuthor(txtAuthor.getText());
-                    b.setPublisher(txtPublisher.getText());
-                    b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
-                    b.setCategoryId(Integer.parseInt(txtCatId.getText().trim()));
-                    b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
-                    
+                    Book b = new Book(); b.setBookId(selectedBookId);
+                    b.setIsbn(txtIsbn.getText()); b.setTitle(txtTitle.getText()); b.setAuthor(txtAuthor.getText());
+                    b.setPublisher(txtPublisher.getText()); b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
+                    b.setCategoryId(Integer.parseInt(txtCatId.getText().trim())); b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
                     if (bookDAO.updateBook(b)) {
-                        JOptionPane.showMessageDialog(this, "Book asset metadata updated successfully.");
-                        refreshBookData();
-                        clearBookFields();
+                        JOptionPane.showMessageDialog(this, "Asset specifications recorded.");
+                        refreshAllWorkspaceData(); clearBookFields();
                     }
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Please verify that numeric fields contain integers.", "Type Format Mismatch", JOptionPane.ERROR_MESSAGE);
-                }
+                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Please check form validation requirements."); }
             });
 
             btnDelete.addActionListener(e -> {
-                if (selectedBookId == -1) {
-                    JOptionPane.showMessageDialog(this, "Please select a book from the table list above to remove.", "Selection Required", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to permanently erase this book from inventory records?", "Confirm Destructive Deletion", JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    if (bookDAO.deleteBook(selectedBookId)) {
-                        JOptionPane.showMessageDialog(this, "Book resource safely deleted from system registries.");
-                        refreshBookData();
-                        clearBookFields();
-                    }
+                if (selectedBookId == -1) return;
+                if (bookDAO.deleteBook(selectedBookId)) {
+                    JOptionPane.showMessageDialog(this, "Asset removed from mapping ledger.");
+                    refreshAllWorkspaceData(); clearBookFields();
                 }
             });
-            
         } else {
             JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
             JButton btnBorrow = new JButton("Rent Selected Book");
-            btnBorrow.setBackground(Color.WHITE);
-            btnBorrow.setForeground(Color.BLACK);
-            btnBorrow.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            formatButton(btnBorrow);
             actionPanel.add(btnBorrow);
             main.add(actionPanel, BorderLayout.SOUTH);
 
@@ -262,14 +258,9 @@ public class DashboardFrame extends JFrame {
                     int bookId = (int) bookModel.getValueAt(modelRow, 0);
                     
                     if (txDAO.borrowBook(bookId, currentUser.getUserId(), 14)) {
-                        JOptionPane.showMessageDialog(this, "Book successfully rented! Check your 'My Rented Books' panel.");
-                        refreshBookData();
-                        refreshTxData();
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Item out of stock.", "Transaction Exception", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Book checkout cleared! Please collect your item and return within 14 calendar days.");
+                        refreshAllWorkspaceData();
                     }
-                } else {
-                    JOptionPane.showMessageDialog(this, "Please select a book from the table first.", "Selection Required", JOptionPane.INFORMATION_MESSAGE);
                 }
             });
         }
@@ -280,37 +271,64 @@ public class DashboardFrame extends JFrame {
         JPanel main = new JPanel(new BorderLayout(10, 10));
         main.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] cols = {"Tx ID", "Book Title", "Borrower", "Issued Date", "Deadline Date", "Status", "Book ID"};
+        String[] cols = {"Tx ID", "Book Title", "Borrower", "Borrowed Date", "Due Date", "Returned Date", "Status", "Book ID"};
         txModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tableTx = new JTable(txModel);
-        tableTx.removeColumn(tableTx.getColumnModel().getColumn(6));
         
+        tableTx.removeColumn(tableTx.getColumnModel().getColumn(7)); 
         main.add(new JScrollPane(tableTx), BorderLayout.CENTER);
 
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        JButton btnPrint = new JButton("Print Circulation Report");
+        formatButton(btnPrint);
+        controlPanel.add(btnPrint);
+
         JButton btnReturn = new JButton("Return Selected Book");
-        btnReturn.setBackground(Color.WHITE);
-        btnReturn.setForeground(Color.BLACK);
-        btnReturn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnReturn.setFocusPainted(false);
+        formatButton(btnReturn);
         controlPanel.add(btnReturn);
         
         main.add(controlPanel, BorderLayout.SOUTH);
 
         btnReturn.addActionListener(e -> {
             int row = tableTx.getSelectedRow();
-            if (row != -1) {
-                int txId = (int) txModel.getValueAt(row, 0);
-                int bookId = (int) txModel.getValueAt(row, 6);
-                if (txDAO.returnBook(txId, bookId)) {
-                    JOptionPane.showMessageDialog(this, "Book returned successfully and updated in inventory storage.");
-                    refreshBookData();
-                    refreshTxData();
-                }
+            if (row == -1) {
+                JOptionPane.showMessageDialog(this, "Please select an active transaction item from the table first.");
+                return;
+            }
+
+            int modelRow = tableTx.convertRowIndexToModel(row);
+
+            int txId = (int) txModel.getValueAt(modelRow, 0);
+            String status = (String) txModel.getValueAt(modelRow, 6);
+            int bookId = (int) txModel.getValueAt(modelRow, 7);
+
+            if ("RETURNED".equalsIgnoreCase(status)) {
+                JOptionPane.showMessageDialog(this, "This book has already been processed as returned.");
+                return;
+            }
+
+            if (txDAO.returnBook(txId, bookId)) {
+                JOptionPane.showMessageDialog(this, "Book successfully returned and logged back into inventory!");
+
+                refreshAllWorkspaceData();
             } else {
-                JOptionPane.showMessageDialog(this, "Please select a rented book item to return.", "Selection Required", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to process book return. Check system console logs.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnPrint.addActionListener(e -> {
+            try {
+                boolean completed = tableTx.print(JTable.PrintMode.FIT_WIDTH, 
+                    new java.text.MessageFormat("Library Operations Center - Master Circulation Audit Ledger"), 
+                    new java.text.MessageFormat("Page {0}"));
+                if(completed) {
+                    JOptionPane.showMessageDialog(this, "Printing system document queue cleared.");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Printing subsystem failure details: " + ex.getMessage());
             }
         });
 
@@ -321,39 +339,32 @@ public class DashboardFrame extends JFrame {
         JPanel main = new JPanel(new BorderLayout(10, 10));
         main.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] cols = {"User ID", "Username", "Password", "Full Name", "Course", "Year Level", "Contact No", "Email", "Role"};
+        String[] cols = {"User ID", "Username", "Password", "Full Name", "Course", "Year Level", "Contact No", "Email", "Role", "Registered Date"};
         userModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tableUsers = new JTable(userModel);
         main.add(new JScrollPane(tableUsers), BorderLayout.CENTER);
 
-        JPanel form = new JPanel(new GridLayout(5, 4, 5, 5));
+        JPanel form = new JPanel(new GridLayout(6, 4, 5, 5));
         form.setBorder(BorderFactory.createTitledBorder("Manage Accounts Data Profiles"));
 
-        form.add(new JLabel("Username:")); txtUName = new JTextField(); form.add(txtUName);
-        form.add(new JLabel("Password:")); txtUPass = new JTextField(); form.add(txtUPass);
-        form.add(new JLabel("Full Name:")); txtUFullName = new JTextField(); form.add(txtUFullName);
-        form.add(new JLabel("Course:")); txtUCourse = new JTextField(); form.add(txtUCourse);
+        form.add(new CenterLabel("Username:")); txtUName = new JTextField(); form.add(txtUName);
+        form.add(new CenterLabel("Password:")); txtUPass = new JTextField(); form.add(txtUPass);
+        form.add(new CenterLabel("Full Name:")); txtUFullName = new JTextField(); form.add(txtUFullName);
+        form.add(new CenterLabel("Course:")); txtUCourse = new JTextField(); form.add(txtUCourse);
+        form.add(new CenterLabel("Year Level:")); cbUYear = new JComboBox<>(new String[]{"1st Year", "2nd Year", "3rd Year", "4th Year", "N/A (Admin)"}); form.add(cbUYear);
+        form.add(new CenterLabel("Contact No:")); txtUContact = new JTextField(); form.add(txtUContact);
+        form.add(new CenterLabel("Email Address:")); txtUEmail = new JTextField(); form.add(txtUEmail);
+        form.add(new CenterLabel("System Role:")); cbURole = new JComboBox<>(new String[]{"STUDENT", "ADMIN"}); form.add(cbURole);
         
-        form.add(new JLabel("Year Level:"));
-        cbUYear = new JComboBox<>(new String[]{"1st Year", "2nd Year", "3rd Year", "4th Year", "N/A (Admin)"});
-        form.add(cbUYear);
-        
-        form.add(new JLabel("Contact No:")); txtUContact = new JTextField(); form.add(txtUContact);
-        form.add(new JLabel("Email Address:")); txtUEmail = new JTextField(); form.add(txtUEmail);
-        
-        form.add(new JLabel("System Role:"));
-        cbURole = new JComboBox<>(new String[]{"STUDENT", "ADMIN"});
-        form.add(cbURole);
+        form.add(new CenterLabel("Date Registered:")); lblRegDateValue = new JLabel("-"); form.add(lblRegDateValue);
 
         JButton btnAddU = new JButton("Add Account");
         JButton btnEditU = new JButton("Update Profile");
         JButton btnDeleteU = new JButton("Remove Account");
-        
-        btnAddU.setBackground(Color.WHITE); btnAddU.setForeground(Color.BLACK);
-        btnEditU.setBackground(Color.WHITE); btnEditU.setForeground(Color.BLACK);
-        btnDeleteU.setBackground(Color.WHITE); btnDeleteU.setForeground(Color.BLACK);
+
+        formatButton(btnAddU); formatButton(btnEditU); formatButton(btnDeleteU);
 
         form.add(btnAddU); form.add(btnEditU); form.add(btnDeleteU);
         main.add(form, BorderLayout.SOUTH);
@@ -370,94 +381,116 @@ public class DashboardFrame extends JFrame {
                 txtUContact.setText(userModel.getValueAt(row, 6).toString());
                 txtUEmail.setText(userModel.getValueAt(row, 7).toString());
                 cbURole.setSelectedItem(userModel.getValueAt(row, 8).toString());
+                lblRegDateValue.setText(userModel.getValueAt(row, 9).toString()); 
             }
         });
 
         btnAddU.addActionListener(e -> {
-            if(txtUName.getText().isEmpty() || txtUPass.getText().isEmpty() || txtUFullName.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Username, Password, and Full Name are mandatory fields.", "Validation Flag", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            User u = new User(0, txtUName.getText(), txtUPass.getText(), txtUFullName.getText(), txtUCourse.getText(), cbUYear.getSelectedItem().toString(), txtUContact.getText(), txtUEmail.getText(), cbURole.getSelectedItem().toString());
+            User u = new User(0, txtUName.getText(), txtUPass.getText(), txtUFullName.getText(), txtUCourse.getText(), cbUYear.getSelectedItem().toString(), txtUContact.getText(), txtUEmail.getText(), cbURole.getSelectedItem().toString(), "");
             if(userDAO.registerUser(u)) {
-                JOptionPane.showMessageDialog(this, "Account created smoothly!");
-                refreshUserData();
-                clearUserFields();
+                JOptionPane.showMessageDialog(this, "Profile added to database.");
+                refreshAllWorkspaceData(); clearUserFields();
             }
         });
 
         btnEditU.addActionListener(e -> {
-            if (selectedUserId == -1) {
-                JOptionPane.showMessageDialog(this, "Please choose an active profile item from the table grid layout below.", "Selection Flag", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            User u = new User(selectedUserId, txtUName.getText(), txtUPass.getText(), txtUFullName.getText(), txtUCourse.getText(), cbUYear.getSelectedItem().toString(), txtUContact.getText(), txtUEmail.getText(), cbURole.getSelectedItem().toString());
+            if (selectedUserId == -1) return;
+            User u = new User(selectedUserId, txtUName.getText(), txtUPass.getText(), txtUFullName.getText(), txtUCourse.getText(), cbUYear.getSelectedItem().toString(), txtUContact.getText(), txtUEmail.getText(), cbURole.getSelectedItem().toString(), lblRegDateValue.getText());
             if(userDAO.updateUser(u)) {
-                JOptionPane.showMessageDialog(this, "Profile updated inside the registry database context.");
-                refreshUserData();
-                clearUserFields();
+                JOptionPane.showMessageDialog(this, "Profile properties modified.");
+                refreshAllWorkspaceData(); clearUserFields();
             }
         });
 
         btnDeleteU.addActionListener(e -> {
-            if (selectedUserId == -1) {
-                JOptionPane.showMessageDialog(this, "Select the record tracking parameter index you wish to remove.", "Selection Flag", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            int confirm = JOptionPane.showConfirmDialog(this, "Are you certain you want to completely erase this user registry account? This operation is irreversible.", "Destructive Execution Warning", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                if(userDAO.deleteUser(selectedUserId)) {
-                    JOptionPane.showMessageDialog(this, "Registry reference scrubbed safely.");
-                    refreshUserData();
-                    clearUserFields();
-                }
+            if (selectedUserId == -1) return;
+            if(userDAO.deleteUser(selectedUserId)) {
+                JOptionPane.showMessageDialog(this, "Account dropped from database registries.");
+                refreshAllWorkspaceData(); clearUserFields();
             }
         });
 
         return main;
     }
 
-    private void refreshBookData() {
+    private void refreshAllWorkspaceData() {
+    try {
         bookModel.setRowCount(0);
         List<Book> books = bookDAO.getAllBooks();
         for (Book b : books) {
             bookModel.addRow(new Object[]{b.getBookId(), b.getIsbn(), b.getTitle(), b.getAuthor(), b.getPublisher(), b.getPublicationYear(), b.getCategoryName(), b.getQuantity()});
         }
+    } catch (Exception e) {
+        System.out.println("DEBUG ERROR: Failed to load Book Catalog table.");
+        e.printStackTrace();
     }
 
-    private void refreshTxData() {
+    try {
         txModel.setRowCount(0);
+        
+        if (tableTx.getRowSorter() != null) {
+            tableTx.setRowSorter(null);
+        }
+        
         Vector<Vector<Object>> data;
-        if ("ADMIN".equals(currentUser.getRole())) {
-            data = txDAO.getActiveTransactions();
+        if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            data = txDAO.getActiveTransactions(); 
         } else {
             data = txDAO.getStudentTransactions(currentUser.getUserId());
         }
-        for (Vector<Object> row : data) {
-            txModel.addRow(row);
+        
+        if (data == null || data.isEmpty()) {
+            System.out.println("DEBUG WARNING: Transaction database query returned 0 records for user ID: " + currentUser.getUserId());
+        } else {
+            for (Vector<Object> row : data) {
+                if (row.size() == 8) {
+                    txModel.addRow(row);
+                } else {
+                    System.out.println("DEBUG ERROR: Row data size mismatch! Expected 8 columns, got " + row.size());
+                }
+            }
         }
+    } catch (Exception e) {
+        System.out.println("CRITICAL UI ERROR: The transaction refresh routine crashed!");
+        e.printStackTrace(); 
     }
 
-    private void refreshUserData() {
-        userModel.setRowCount(0);
-        List<User> users = userDAO.getAllUsers();
-        for(User u : users) {
-            userModel.addRow(new Object[]{u.getUserId(), u.getUsername(), u.getPassword(), u.getFullName(), u.getCourse(), u.getYearLevel(), u.getContactNumber(), u.getEmail(), u.getRole()});
+    if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+        try {
+            userModel.setRowCount(0);
+            List<User> users = userDAO.getAllUsers();
+            for(User u : users) {
+                userModel.addRow(new Object[]{u.getUserId(), u.getUsername(), u.getPassword(), u.getFullName(), u.getCourse(), u.getYearLevel(), u.getContactNumber(), u.getEmail(), u.getRole(), u.getDateRegistered()});
+            }
+            
+            int[] currentStats = bookDAO.getLibraryStatistics();
+            lblStatTotalBooks.setText(String.valueOf(currentStats[0]));
+            lblStatBorrowed.setText(String.valueOf(currentStats[1]));
+            lblStatOverdue.setText(String.valueOf(currentStats[2]));
+            lblStatStudents.setText(String.valueOf(currentStats[3]));
+        } catch (Exception e) {
+            System.out.println("DEBUG ERROR: Failed to load Admin specific panels.");
+            e.printStackTrace();
         }
     }
+}
 
     private void clearBookFields() {
         selectedBookId = -1;
-        txtIsbn.setText(""); txtTitle.setText(""); txtAuthor.setText(""); 
-        txtPublisher.setText(""); txtPubYear.setText(""); txtCatId.setText(""); txtQty.setText("");
+        txtIsbn.setText(""); txtTitle.setText(""); txtAuthor.setText(""); txtPublisher.setText(""); txtPubYear.setText(""); txtCatId.setText(""); txtQty.setText("");
         tableBooks.clearSelection();
     }
 
     private void clearUserFields() {
         selectedUserId = -1;
-        txtUName.setText(""); txtUPass.setText(""); txtUFullName.setText(""); 
-        txtUCourse.setText(""); txtUContact.setText(""); txtUEmail.setText("");
-        cbUYear.setSelectedIndex(0); cbURole.setSelectedIndex(0);
+        txtUName.setText(""); txtUPass.setText(""); txtUFullName.setText(""); txtUCourse.setText(""); txtUContact.setText(""); txtUEmail.setText("");
+        lblRegDateValue.setText("-"); cbUYear.setSelectedIndex(0); cbURole.setSelectedIndex(0);
         tableUsers.clearSelection();
+    }
+    
+    private static class CenterLabel extends JLabel {
+        public CenterLabel(String text) {
+            super(text, SwingConstants.LEFT);
+        }
     }
 }
