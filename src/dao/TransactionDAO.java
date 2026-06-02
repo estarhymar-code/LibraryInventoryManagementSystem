@@ -112,7 +112,6 @@ public class TransactionDAO {
 
 public Vector<Vector<Object>> getActiveTransactions() {
     Vector<Vector<Object>> list = new Vector<>();
-    // Ensure you select exactly these columns in this order
     String sql = "SELECT t.transaction_id AS tx_id, b.title, u.full_name, t.borrow_date, t.due_date, t.return_date, t.status, t.book_id " +
              "FROM transactions t " +
              "INNER JOIN books b ON t.book_id = b.book_id " +
