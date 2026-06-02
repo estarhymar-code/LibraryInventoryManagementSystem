@@ -123,7 +123,7 @@ public class AuthFrame extends JFrame {
         gbc.gridx = 1; p.add(txtEmail, gbc);
 
         gbc.gridx = 0; gbc.gridy = 8; p.add(new JLabel("System Role:"), gbc);
-        cbRole = new JComboBox<>(new String[]{"STUDENT", "ADMIN"});
+        cbRole = new JComboBox<>(new String[]{"STUDENT"});
         gbc.gridx = 1; p.add(cbRole, gbc);
 
         btnRegister = new JButton("Register Now");

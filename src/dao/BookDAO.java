@@ -28,27 +28,35 @@ public class BookDAO {
     }
 
     public List<Book> getAllBooks() {
-        List<Book> list = new ArrayList<>();
-        String sql = "SELECT b.*, c.category_name FROM books b LEFT JOIN categories c ON b.category_id = c.category_id";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                Book b = new Book();
-                b.setBookId(rs.getInt("book_id"));
-                b.setIsbn(rs.getString("isbn"));
-                b.setTitle(rs.getString("title"));
-                b.setAuthor(rs.getString("author"));
-                b.setPublisher(rs.getString("publisher"));
-                b.setPublicationYear(rs.getInt("publication_year"));
-                b.setCategoryId(rs.getInt("category_id"));
-                b.setCategoryName(rs.getString("category_name") != null ? rs.getString("category_name") : "General");
-                b.setQuantity(rs.getInt("quantity"));
-                list.add(b);
-            }
-        } catch (SQLException e) { e.printStackTrace(); }
-        return list;
+    List<Book> list = new ArrayList<>();
+    String query = "SELECT b.book_id, b.isbn, t.title_name, a.author_name, p.publisher_name, c.category_name, b.publication_year, b.quantity " +
+                   "FROM books b " +
+                   "JOIN titles t ON b.title_id = t.title_id " +
+                   "LEFT JOIN authors a ON b.author_id = a.author_id " +
+                   "LEFT JOIN publishers p ON b.publisher_id = p.publisher_id " +
+                   "LEFT JOIN categories c ON b.category_id = c.category_id";
+                   
+    try (Connection conn = DatabaseConnection.getConnection();
+         Statement stmt = conn.createStatement();
+         ResultSet rs = stmt.executeQuery(query)) {
+        
+        while (rs.next()) {
+            Book book = new Book();
+            book.setBookId(rs.getInt("book_id"));
+            book.setIsbn(rs.getString("isbn"));
+            book.setTitle(rs.getString("title_name"));       // Text name from titles table
+            book.setAuthor(rs.getString("author_name"));     // Text name from authors table
+            book.setPublisher(rs.getString("publisher_name")); // Text name from publishers table
+            book.setCategoryName(rs.getString("category_name"));
+            book.setPublicationYear(rs.getInt("publication_year"));
+            book.setQuantity(rs.getInt("quantity"));
+            list.add(book);
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return list;
+}
 
     public boolean addBook(Book b) {
         String sql = "INSERT INTO books (isbn, title, author, publisher, publication_year, category_id, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)";
