@@ -27,8 +27,8 @@ public class Book {
     public void setPublicationYear(int publicationYear) { this.publicationYear = publicationYear; }
     public int getCategoryId() { return categoryId; }
     public void setCategoryId(int categoryId) { this.categoryId = categoryId; }
-    public String getCategoryName() { return categoryName; }
-    public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+    public String getCategoryName() {return categoryName;}
+    public void setCategoryName(String categoryName) { this.categoryName = categoryName;}
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
 }

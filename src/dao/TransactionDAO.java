@@ -112,7 +112,7 @@ public class TransactionDAO {
 
 public Vector<Vector<Object>> getActiveTransactions() {
     Vector<Vector<Object>> list = new Vector<>();
-    String sql = "SELECT t.transaction_id AS transaction_id, b.title_id, u.full_name, t.borrow_date, t.due_date, t.return_date, t.status, t.book_id " +
+    String sql = "SELECT t.transaction_id AS transaction_id, isbn, u.full_name, t.borrow_date, t.due_date, t.return_date, t.status, t.book_id " +
              "FROM transactions t " +
              "INNER JOIN books b ON t.book_id = b.book_id " +
              "INNER JOIN users u ON t.user_id = u.user_id " +
@@ -123,7 +123,7 @@ public Vector<Vector<Object>> getActiveTransactions() {
         while (rs.next()) {
             Vector<Object> row = new Vector<>();
             row.add(rs.getInt("transaction_id"));          
-            row.add(rs.getString("title_id"));        
+            row.add(rs.getString("isbn"));        
             row.add(rs.getString("full_name"));    
             row.add(rs.getDate("borrow_date"));    
             row.add(rs.getDate("due_date"));       

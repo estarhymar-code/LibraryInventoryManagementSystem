@@ -181,7 +181,7 @@ public class DashboardFrame extends JFrame {
             form.add(new JLabel("Author:")); txtAuthor = new JTextField(); form.add(txtAuthor);
             form.add(new JLabel("Publisher:")); txtPublisher = new JTextField(); form.add(txtPublisher);
             form.add(new JLabel("Publication Year:")); txtPubYear = new JTextField(); form.add(txtPubYear);
-            form.add(new JLabel("Category ID (1-4):")); txtCatId = new JTextField(); form.add(txtCatId);
+            form.add(new JLabel("Category ID :")); txtCatId = new JTextField(); form.add(txtCatId);
             form.add(new JLabel("Stock Quantity:")); txtQty = new JTextField(); form.add(txtQty);
 
             JPanel actionButtonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
@@ -211,17 +211,30 @@ public class DashboardFrame extends JFrame {
             });
 
             btnAdd.addActionListener(e -> {
-                try {
-                    Book b = new Book();
-                    b.setIsbn(txtIsbn.getText()); b.setTitle(txtTitle.getText()); b.setAuthor(txtAuthor.getText());
-                    b.setPublisher(txtPublisher.getText()); b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
-                    b.setCategoryId(Integer.parseInt(txtCatId.getText().trim())); b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
-                    if (bookDAO.addBook(b)) {
-                        JOptionPane.showMessageDialog(this, "Book asset mapped successfully.");
-                        refreshAllWorkspaceData(); clearBookFields();
-                    }
-                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Production Error: Check numeric formatting lines for year/quantity levels!"); }
-            });
+                // Inside your Add Book button's ActionPerformed event listener
+try {
+    Book b = new Book();
+    b.setIsbn(txtIsbn.getText().trim());
+    b.setTitle(txtTitle.getText().trim());
+    b.setAuthor(txtAuthor.getText().trim());
+    b.setPublisher(txtPublisher.getText().trim());
+    
+    // Grab the actual text typed by the admin (e.g., "Computer Science")
+    b.setCategoryName(txtCatId.getText().trim()); 
+    
+    b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
+    b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
+
+    BookDAO dao = new BookDAO();
+    if (dao.addBook(b)) {
+        JOptionPane.showMessageDialog(this, "Book successfully saved to the catalog!");
+        // Optional: Clear fields or refresh your JTable display here
+    } else {
+        JOptionPane.showMessageDialog(this, "Error: Could not save the book record.", "Database Error", JOptionPane.ERROR_MESSAGE);
+    }
+} catch (NumberFormatException ex) {
+    JOptionPane.showMessageDialog(this, "Please enter valid numbers for Year and Quantity.", "Input Error", JOptionPane.WARNING_MESSAGE);
+}});
 
             btnEdit.addActionListener(e -> {
                 if (selectedBookId == -1) return;
@@ -271,7 +284,7 @@ public class DashboardFrame extends JFrame {
         JPanel main = new JPanel(new BorderLayout(10, 10));
         main.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] cols = {"Tx ID", "Book Title", "Borrower", "Borrowed Date", "Due Date", "Returned Date", "Status", "Book ID"};
+        String[] cols = {"Transaction ID", "Book", "Borrower", "Borrowed Date", "Due Date", "Returned Date", "Status", "Book ID"};
         txModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
