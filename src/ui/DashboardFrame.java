@@ -38,7 +38,7 @@ public class DashboardFrame extends JFrame {
         this.currentUser = user;
         setTitle("Library Database Management System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1250, 820);
+        setSize(1350, 850); 
         setLocationRelativeTo(null);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -181,7 +181,7 @@ public class DashboardFrame extends JFrame {
             form.add(new JLabel("Author:")); txtAuthor = new JTextField(); form.add(txtAuthor);
             form.add(new JLabel("Publisher:")); txtPublisher = new JTextField(); form.add(txtPublisher);
             form.add(new JLabel("Publication Year:")); txtPubYear = new JTextField(); form.add(txtPubYear);
-            form.add(new JLabel("Category ID :")); txtCatId = new JTextField(); form.add(txtCatId);
+            form.add(new JLabel("Category Name:")); txtCatId = new JTextField(); form.add(txtCatId);
             form.add(new JLabel("Stock Quantity:")); txtQty = new JTextField(); form.add(txtQty);
 
             JPanel actionButtonPanel = new JPanel(new GridLayout(1, 3, 5, 5));
@@ -205,56 +205,65 @@ public class DashboardFrame extends JFrame {
                     txtAuthor.setText(bookModel.getValueAt(modelRow, 3).toString());
                     txtPublisher.setText(bookModel.getValueAt(modelRow, 4).toString());
                     txtPubYear.setText(bookModel.getValueAt(modelRow, 5).toString());
-                    txtCatId.setText("1"); 
+                    txtCatId.setText(bookModel.getValueAt(modelRow, 6).toString());
                     txtQty.setText(bookModel.getValueAt(modelRow, 7).toString());
                 }
             });
 
             btnAdd.addActionListener(e -> {
-                // Inside your Add Book button's ActionPerformed event listener
-try {
-    Book b = new Book();
-    b.setIsbn(txtIsbn.getText().trim());
-    b.setTitle(txtTitle.getText().trim());
-    b.setAuthor(txtAuthor.getText().trim());
-    b.setPublisher(txtPublisher.getText().trim());
-    
-    // Grab the actual text typed by the admin (e.g., "Computer Science")
-    b.setCategoryName(txtCatId.getText().trim()); 
-    
-    b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
-    b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
+                try {
+                    Book b = new Book();
+                    b.setIsbn(txtIsbn.getText().trim());
+                    b.setTitle(txtTitle.getText().trim());
+                    b.setAuthor(txtAuthor.getText().trim());
+                    b.setPublisher(txtPublisher.getText().trim());
+                    b.setCategoryName(txtCatId.getText().trim());
+                    b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
+                    b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
 
-    BookDAO dao = new BookDAO();
-    if (dao.addBook(b)) {
-        JOptionPane.showMessageDialog(this, "Book successfully saved to the catalog!");
-        // Optional: Clear fields or refresh your JTable display here
-    } else {
-        JOptionPane.showMessageDialog(this, "Error: Could not save the book record.", "Database Error", JOptionPane.ERROR_MESSAGE);
-    }
-} catch (NumberFormatException ex) {
-    JOptionPane.showMessageDialog(this, "Please enter valid numbers for Year and Quantity.", "Input Error", JOptionPane.WARNING_MESSAGE);
-}});
+                    if (bookDAO.addBook(b)) {
+                        JOptionPane.showMessageDialog(this, "Book successfully saved to the catalog!");
+                        refreshAllWorkspaceData();
+                        clearBookFields();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Error: Could not save the book record.", "Database Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Please enter valid numbers for Year and Quantity.", "Input Error", JOptionPane.WARNING_MESSAGE);
+                }
+            });
 
             btnEdit.addActionListener(e -> {
                 if (selectedBookId == -1) return;
                 try {
-                    Book b = new Book(); b.setBookId(selectedBookId);
-                    b.setIsbn(txtIsbn.getText()); b.setTitle(txtTitle.getText()); b.setAuthor(txtAuthor.getText());
-                    b.setPublisher(txtPublisher.getText()); b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
-                    b.setCategoryId(Integer.parseInt(txtCatId.getText().trim())); b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
+                    Book b = new Book(); 
+                    b.setBookId(selectedBookId);
+                    b.setIsbn(txtIsbn.getText().trim()); 
+                    b.setTitle(txtTitle.getText().trim()); 
+                    b.setAuthor(txtAuthor.getText().trim());
+                    b.setPublisher(txtPublisher.getText().trim()); 
+                    b.setPublicationYear(Integer.parseInt(txtPubYear.getText().trim()));
+                    b.setCategoryName(txtCatId.getText().trim());
+                    b.setQuantity(Integer.parseInt(txtQty.getText().trim()));
+                    
                     if (bookDAO.updateBook(b)) {
                         JOptionPane.showMessageDialog(this, "Asset specifications recorded.");
-                        refreshAllWorkspaceData(); clearBookFields();
+                        refreshAllWorkspaceData(); 
+                        clearBookFields();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Failed to update record details.", "Database Error", JOptionPane.ERROR_MESSAGE);
                     }
-                } catch (Exception ex) { JOptionPane.showMessageDialog(this, "Please check form validation requirements."); }
+                } catch (Exception ex) { 
+                    JOptionPane.showMessageDialog(this, "Please check form validation requirements. Ensure Year and Qty are numbers."); 
+                }
             });
 
             btnDelete.addActionListener(e -> {
                 if (selectedBookId == -1) return;
                 if (bookDAO.deleteBook(selectedBookId)) {
                     JOptionPane.showMessageDialog(this, "Asset removed from mapping ledger.");
-                    refreshAllWorkspaceData(); clearBookFields();
+                    refreshAllWorkspaceData(); 
+                    clearBookFields();
                 }
             });
         } else {
@@ -284,13 +293,13 @@ try {
         JPanel main = new JPanel(new BorderLayout(10, 10));
         main.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        String[] cols = {"Transaction ID", "Book", "Borrower", "Borrowed Date", "Due Date", "Returned Date", "Status", "Book ID"};
+        String[] cols = {"Transaction ID", "Book", "Borrower", "Borrowed Date", "Due Date", "Returned Date", "Status", "Fine Amt", "Fine Paid", "Book ID"};
         txModel = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         tableTx = new JTable(txModel);
         
-        tableTx.removeColumn(tableTx.getColumnModel().getColumn(7)); 
+        tableTx.removeColumn(tableTx.getColumnModel().getColumn(9)); 
         main.add(new JScrollPane(tableTx), BorderLayout.CENTER);
 
         JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -298,6 +307,43 @@ try {
         JButton btnPrint = new JButton("Print Circulation Report");
         formatButton(btnPrint);
         controlPanel.add(btnPrint);
+
+        if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            JButton btnPayFine = new JButton("Clear / Pay Fine");
+            formatButton(btnPayFine);
+            controlPanel.add(btnPayFine);
+
+            btnPayFine.addActionListener(e -> {
+                int row = tableTx.getSelectedRow();
+                if (row == -1) {
+                    JOptionPane.showMessageDialog(this, "Please select an overdue ledger entry to update payment status.");
+                    return;
+                }
+                int modelRow = tableTx.convertRowIndexToModel(row);
+                int txId = (int) txModel.getValueAt(modelRow, 0);
+                double fineAmt = Double.parseDouble(txModel.getValueAt(modelRow, 7).toString());
+                String isPaid = txModel.getValueAt(modelRow, 8).toString();
+
+                if (fineAmt <= 0) {
+                    JOptionPane.showMessageDialog(this, "This transaction doesn't have an active outstanding fine balance.");
+                    return;
+                }
+                if ("PAID".equalsIgnoreCase(isPaid) || "TRUE".equalsIgnoreCase(isPaid)) {
+                    JOptionPane.showMessageDialog(this, "This penalty balance statement has already been payed.");
+                    return;
+                }
+
+                int confirm = JOptionPane.showConfirmDialog(this, "Confirm collection processing of " + fineAmt + " currency balance for Tx #" + txId + "?", "Fine Settlements Desk", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    if (txDAO.settleTransactionFine(txId)) {
+                        JOptionPane.showMessageDialog(this, "Processed. Ledger account updated.");
+                        refreshAllWorkspaceData();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Database execution error compiling balance modifications.");
+                    }
+                }
+            });
+        }
 
         JButton btnReturn = new JButton("Return Selected Book");
         formatButton(btnReturn);
@@ -316,7 +362,7 @@ try {
 
             int txId = (int) txModel.getValueAt(modelRow, 0);
             String status = (String) txModel.getValueAt(modelRow, 6);
-            int bookId = (int) txModel.getValueAt(modelRow, 7);
+            int bookId = (int) txModel.getValueAt(modelRow, 9); 
 
             if ("RETURNED".equalsIgnoreCase(status)) {
                 JOptionPane.showMessageDialog(this, "This book has already been processed as returned.");
@@ -325,7 +371,6 @@ try {
 
             if (txDAO.returnBook(txId, bookId)) {
                 JOptionPane.showMessageDialog(this, "Book successfully returned and logged back into inventory!");
-
                 refreshAllWorkspaceData();
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to process book return. Check system console logs.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -375,11 +420,11 @@ try {
 
         JButton btnAddU = new JButton("Add Account");
         JButton btnEditU = new JButton("Update Profile");
-        JButton btnDeleteU = new JButton("Remove Account");
+        JButton btnRemoveU = new JButton("Remove Account");
 
-        formatButton(btnAddU); formatButton(btnEditU); formatButton(btnDeleteU);
+        formatButton(btnAddU); formatButton(btnEditU); formatButton(btnRemoveU);
 
-        form.add(btnAddU); form.add(btnEditU); form.add(btnDeleteU);
+        form.add(btnAddU); form.add(btnEditU); form.add(btnRemoveU);
         main.add(form, BorderLayout.SOUTH);
 
         tableUsers.getSelectionModel().addListSelectionListener(e -> {
@@ -415,7 +460,7 @@ try {
             }
         });
 
-        btnDeleteU.addActionListener(e -> {
+        btnRemoveU.addActionListener(e -> {
             if (selectedUserId == -1) return;
             if(userDAO.deleteUser(selectedUserId)) {
                 JOptionPane.showMessageDialog(this, "Account dropped from database registries.");
@@ -427,66 +472,66 @@ try {
     }
 
     private void refreshAllWorkspaceData() {
-    try {
-        bookModel.setRowCount(0);
-        List<Book> books = bookDAO.getAllBooks();
-        for (Book b : books) {
-            bookModel.addRow(new Object[]{b.getBookId(), b.getIsbn(), b.getTitle(), b.getAuthor(), b.getPublisher(), b.getPublicationYear(), b.getCategoryName(), b.getQuantity()});
-        }
-    } catch (Exception e) {
-        System.out.println("DEBUG ERROR: Failed to load Book Catalog table.");
-        e.printStackTrace();
-    }
-
-    try {
-        txModel.setRowCount(0);
-        
-        if (tableTx.getRowSorter() != null) {
-            tableTx.setRowSorter(null);
-        }
-        
-        Vector<Vector<Object>> data;
-        if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            data = txDAO.getActiveTransactions(); 
-        } else {
-            data = txDAO.getStudentTransactions(currentUser.getUserId());
-        }
-        
-        if (data == null || data.isEmpty()) {
-            System.out.println("DEBUG WARNING: Transaction database query returned 0 records for user ID: " + currentUser.getUserId());
-        } else {
-            for (Vector<Object> row : data) {
-                if (row.size() == 8) {
-                    txModel.addRow(row);
-                } else {
-                    System.out.println("DEBUG ERROR: Row data size mismatch! Expected 8 columns, got " + row.size());
-                }
-            }
-        }
-    } catch (Exception e) {
-        System.out.println("CRITICAL UI ERROR: The transaction refresh routine crashed!");
-        e.printStackTrace(); 
-    }
-
-    if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
         try {
-            userModel.setRowCount(0);
-            List<User> users = userDAO.getAllUsers();
-            for(User u : users) {
-                userModel.addRow(new Object[]{u.getUserId(), u.getUsername(), u.getPassword(), u.getFullName(), u.getCourse(), u.getYearLevel(), u.getContactNumber(), u.getEmail(), u.getRole(), u.getDateRegistered()});
+            bookModel.setRowCount(0);
+            List<Book> books = bookDAO.getAllBooks();
+            for (Book b : books) {
+                bookModel.addRow(new Object[]{b.getBookId(), b.getIsbn(), b.getTitle(), b.getAuthor(), b.getPublisher(), b.getPublicationYear(), b.getCategoryName(), b.getQuantity()});
             }
-            
-            int[] currentStats = bookDAO.getLibraryStatistics();
-            lblStatTotalBooks.setText(String.valueOf(currentStats[0]));
-            lblStatBorrowed.setText(String.valueOf(currentStats[1]));
-            lblStatOverdue.setText(String.valueOf(currentStats[2]));
-            lblStatStudents.setText(String.valueOf(currentStats[3]));
         } catch (Exception e) {
-            System.out.println("DEBUG ERROR: Failed to load Admin specific panels.");
+            System.out.println("DEBUG ERROR: Failed to load Book Catalog table.");
             e.printStackTrace();
         }
+
+        try {
+            txModel.setRowCount(0);
+            
+            if (tableTx.getRowSorter() != null) {
+                tableTx.setRowSorter(null);
+            }
+            
+            Vector<Vector<Object>> data;
+            if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+                data = txDAO.getActiveTransactions(); 
+            } else {
+                data = txDAO.getStudentTransactions(currentUser.getUserId());
+            }
+            
+            if (data == null || data.isEmpty()) {
+                System.out.println("DEBUG WARNING: Transaction database query returned 0 records for user ID: " + currentUser.getUserId());
+            } else {
+                for (Vector<Object> row : data) {
+                    if (row.size() == 10) {
+                        txModel.addRow(row);
+                    } else {
+                        System.out.println("DEBUG ERROR: Row data size mismatch! Expected 10 columns, got " + row.size());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("CRITICAL UI ERROR: The transaction refresh routine crashed!");
+            e.printStackTrace(); 
+        }
+
+        if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            try {
+                userModel.setRowCount(0);
+                List<User> users = userDAO.getAllUsers();
+                for(User u : users) {
+                    userModel.addRow(new Object[]{u.getUserId(), u.getUsername(), u.getPassword(), u.getFullName(), u.getCourse(), u.getYearLevel(), u.getContactNumber(), u.getEmail(), u.getRole(), u.getDateRegistered()});
+                }
+                
+                int[] currentStats = bookDAO.getLibraryStatistics();
+                lblStatTotalBooks.setText(String.valueOf(currentStats[0]));
+                lblStatBorrowed.setText(String.valueOf(currentStats[1]));
+                lblStatOverdue.setText(String.valueOf(currentStats[2]));
+                lblStatStudents.setText(String.valueOf(currentStats[3]));
+            } catch (Exception e) {
+                System.out.println("DEBUG ERROR: Failed to load Admin specific panels.");
+                e.printStackTrace();
+            }
+        }
     }
-}
 
     private void clearBookFields() {
         selectedBookId = -1;
