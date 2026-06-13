@@ -4,6 +4,7 @@ import dao.UserDAO;
 import models.User;
 import javax.swing.*;
 import java.awt.*;
+import java.util.regex.Pattern;
 
 public class AuthFrame extends JFrame {
     private JTextField txtUser, txtFullName, txtCourse, txtContact, txtEmail;
@@ -13,6 +14,9 @@ public class AuthFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
     private UserDAO userDAO = new UserDAO();
+
+    private static final Pattern EMAIL_PATTERN = 
+        Pattern.compile("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$");
 
     public AuthFrame() {
         setTitle("Library Access Portal");
@@ -139,14 +143,30 @@ public class AuthFrame extends JFrame {
         p.add(btnSwitch, gbc);
 
         btnRegister.addActionListener(e -> {
-            if(txtRegUser.getText().isEmpty() || new String(txtRegPass.getPassword()).isEmpty() || txtFullName.getText().isEmpty()) {
+            String username = txtRegUser.getText().trim();
+            String password = new String(txtRegPass.getPassword());
+            String fullName = txtFullName.getText().trim();
+            String contactNum = txtContact.getText().trim();
+            String emailAddr = txtEmail.getText().trim();
+
+            if(username.isEmpty() || password.isEmpty() || fullName.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Username, Password, and Full Name are required fields.", "Form Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            User u = new User(0, txtRegUser.getText(), new String(txtRegPass.getPassword()), txtFullName.getText(),
-                              txtCourse.getText(), cbYearLevel.getSelectedItem().toString(), txtContact.getText(), 
-                              txtEmail.getText(), cbRole.getSelectedItem().toString(), "");
+            if (contactNum.length() != 11 || !contactNum.matches("\\d+")) {
+                JOptionPane.showMessageDialog(this, "Contact number must be exactly 11 numeric digits long (e.g., 09123456789).", "Invalid Contact Number", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            if (emailAddr.isEmpty() || !EMAIL_PATTERN.matcher(emailAddr).matches()) {
+                JOptionPane.showMessageDialog(this, "Please enter a valid, complete email format address (e.g., user@example.com).", "Invalid Email Form", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            User u = new User(0, username, password, fullName,
+                              txtCourse.getText().trim(), cbYearLevel.getSelectedItem().toString(), contactNum, 
+                              emailAddr, cbRole.getSelectedItem().toString(), "");
             
             if (userDAO.registerUser(u)) {
                 JOptionPane.showMessageDialog(this, "Registration Successful!");

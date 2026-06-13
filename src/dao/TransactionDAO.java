@@ -121,7 +121,7 @@ public class TransactionDAO {
         updateLiveOverdueFines();
 
         String sql = "SELECT t.transaction_id, b.isbn, u.full_name, t.borrow_date, t.due_date, t.return_date, t.status, t.fine_amount, " +
-                     "CASE WHEN t.fine_paid = TRUE THEN 'PAID' ELSE 'UNPAID' END AS fine_status, t.book_id " +
+                     "CASE WHEN t.fine_paid = TRUE THEN 'PAID' ELSE 'EARLY RETURN' END AS fine_status, t.book_id " +
                      "FROM transactions t " +
                      "INNER JOIN books b ON t.book_id = b.book_id " +
                      "INNER JOIN users u ON t.user_id = u.user_id " +
@@ -154,7 +154,7 @@ public class TransactionDAO {
         updateLiveOverdueFines();
 
         String sql = "SELECT t.transaction_id, b.isbn, u.full_name, t.borrow_date, t.due_date, t.return_date, t.status, t.fine_amount, " +
-                     "CASE WHEN t.fine_paid = TRUE THEN 'PAID' ELSE 'UNPAID' END AS fine_status, t.book_id " +
+                     "CASE WHEN t.fine_paid = TRUE THEN 'PAID' ELSE 'EARLY RETURN' END AS fine_status, t.book_id " +
                      "FROM transactions t " +
                      "INNER JOIN books b ON t.book_id = b.book_id " +
                      "INNER JOIN users u ON t.user_id = u.user_id " +
